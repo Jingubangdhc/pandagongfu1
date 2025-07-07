@@ -1,0 +1,211 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 用户表
+model User {
+  id            String   @id @default(cuid())
+  username      String   @unique
+  email         String   @unique
+  password      String
+  phone         String?
+  avatar        String?
+  role          String   @default("USER") // USER, ADMIN, SUPER_ADMIN
+  gender        String?  // MALE, FEMALE, OTHER
+  birthday      DateTime?
+  bio           String?
+  referralCode  String   @unique
+  referrerId    String?
+  referrer      User?    @relation("UserReferral", fields: [referrerId], references: [id])
+  referrals     User[]   @relation("UserReferral")
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // 关联关系
+  purchases     Purchase[]
+  orders        Order[]
+  commissions   Commission[] @relation("UserCommissions")
+  fromCommissions Commission[] @relation("FromUserCommissions")
+  withdrawals   Withdrawal[]
+
+  @@map("users")
+}
+
+// 分类表
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  slug        String   @unique
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联关系
+  videos      Video[]
+
+  @@map("categories")
+}
+
+// 视频表
+model Video {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  thumbnail     String?
+  videoUrl      String
+  price         Float    @default(0)
+  originalPrice Float?
+  duration      Int      @default(0) // 秒
+  rating        Float    @default(0)
+  students      Int      @default(0)
+  instructor    String
+  categoryId    String
+  category      Category @relation(fields: [categoryId], references: [id])
+  tags          String?  // JSON字符串存储标签
+  difficulty    String   @default("BEGINNER") // BEGINNER, INTERMEDIATE, ADVANCED
+  isActive      Boolean  @default(true)
+  isFree        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // 关联关系
+  chapters      Chapter[]
+  purchases     Purchase[]
+  orderItems    OrderItem[]
+
+  @@map("videos")
+}
+
+// 章节表
+model Chapter {
+  id        String   @id @default(cuid())
+  title     String
+  duration  Int      @default(0) // 秒
+  order     Int
+  isFree    Boolean  @default(false)
+  videoId   String
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("chapters")
+}
+
+// 购买记录表
+model Purchase {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  videoId   String
+  video     Video    @relation(fields: [videoId], references: [id])
+  price     Float
+  orderId   String?
+  status    String   @default("COMPLETED") // PENDING, COMPLETED, FAILED, REFUNDED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, videoId])
+  @@map("purchases")
+}
+
+// 订单表
+model Order {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  totalAmount   Float
+  paymentMethod String?     // stripe, alipay, wechat
+  status        String      @default("PENDING") // PENDING, COMPLETED, FAILED, CANCELLED
+  paidAt        DateTime?
+  transactionId String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // 关联关系
+  items         OrderItem[]
+
+  @@map("orders")
+}
+
+// 订单项表
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  videoId String
+  video   Video  @relation(fields: [videoId], references: [id])
+  title   String
+  price   Float
+
+  @@map("order_items")
+}
+
+// 佣金表
+model Commission {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation("UserCommissions", fields: [userId], references: [id])
+  fromUserId String
+  fromUser   User     @relation("FromUserCommissions", fields: [fromUserId], references: [id])
+  orderId    String?
+  amount     Float
+  level      Int      // 1 or 2
+  status     String   @default("PENDING") // PENDING, CONFIRMED, PAID
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("commissions")
+}
+
+// 提现表
+model Withdrawal {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  amount      Float
+  fee         Float    @default(0)
+  actualAmount Float
+  method      String   // BANK_CARD, ALIPAY, WECHAT_PAY
+  accountInfo String   // JSON字符串存储账户信息
+  status      String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, REJECTED
+  remark      String?
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("withdrawals")
+}
+
+// 推荐关系表
+model Referral {
+  id         String   @id @default(cuid())
+  referrerId String
+  referredId String
+  createdAt  DateTime @default(now())
+
+  @@unique([referrerId, referredId])
+  @@map("referrals")
+}
+
+// 系统设置表
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  type      String   @default("STRING") // STRING, NUMBER, BOOLEAN, JSON
+  description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
