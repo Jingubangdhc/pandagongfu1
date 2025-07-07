@@ -62,3 +62,8 @@ pids
 
 # N8N workflows (separate project)
 /n8n-workflows/
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
