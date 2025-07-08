@@ -3,6 +3,9 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 import { Toaster } from '@/components/ui/toaster'
+import ErrorBoundary from '@/components/error-boundary'
+import { NetworkStatusProvider } from '@/components/network-status'
+import { PerformanceProvider, PerformanceDebugger } from '@/components/performance/performance-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -27,12 +30,19 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={inter.className}>
-        <Providers>
-          <div className="min-h-screen bg-background">
-            {children}
-          </div>
-          <Toaster />
-        </Providers>
+        <PerformanceProvider>
+          <ErrorBoundary>
+            <NetworkStatusProvider>
+              <Providers>
+                <div className="min-h-screen bg-background">
+                  {children}
+                </div>
+                <Toaster />
+              </Providers>
+            </NetworkStatusProvider>
+          </ErrorBoundary>
+          <PerformanceDebugger />
+        </PerformanceProvider>
       </body>
     </html>
   )

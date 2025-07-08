@@ -1,0 +1,35 @@
+{
+  "envId": "pandagongfu-1-8ghmo6gdb4b55bee",
+  "version": "2.0",
+  "framework": {
+    "name": "nextjs",
+    "plugins": {
+      "node": {
+        "use": "@cloudbase/framework-plugin-node",
+        "inputs": {
+          "entry": "server.js",
+          "name": "pandagongfu-hui-app",
+          "path": "/",
+          "runtime": "Nodejs18.15",
+          "envVariables": {
+            "NODE_ENV": "production"
+          }
+        }
+      },
+      "website": {
+        "use": "@cloudbase/framework-plugin-website",
+        "inputs": {
+          "outputPath": ".next/static",
+          "cloudPath": "/_next/static",
+          "ignore": [
+            ".git",
+            ".github",
+            "node_modules",
+            ".next/cache"
+          ]
+        }
+      }
+    }
+  },
+  "region": "ap-shanghai"
+}

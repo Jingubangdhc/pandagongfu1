@@ -1,0 +1,348 @@
+// 生产环境数据库配置
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// 用户模型
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  avatar    String?
+  role      Role     @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联关系
+  purchases     Purchase[]
+  orders        Order[]
+  commissions   Commission[]
+  withdrawals   Withdrawal[]
+  videoProgress VideoProgress[]
+  chapterProgress ChapterProgress[]
+
+  @@map("users")
+  @@index([email])
+  @@index([username])
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+// 角色枚举
+enum Role {
+  USER
+  ADMIN
+  INSTRUCTOR
+}
+
+// 分类模型
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  slug        String    @unique
+  icon        String?
+  color       String?
+  order       Int       @default(0)
+  parentId    String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // 关联关系
+  parent   Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  videos   Video[]
+
+  @@map("categories")
+  @@index([slug])
+  @@index([parentId])
+  @@index([isActive])
+  @@index([order])
+}
+
+// 视频模型
+model Video {
+  id           String     @id @default(cuid())
+  title        String
+  description  String     @db.Text
+  thumbnail    String?
+  videoUrl     String
+  price        Decimal    @db.Decimal(10, 2)
+  originalPrice Decimal?  @db.Decimal(10, 2)
+  duration     Int        // 秒
+  rating       Float      @default(0)
+  students     Int        @default(0)
+  instructor   String
+  difficulty   Difficulty @default(BEGINNER)
+  categoryId   String
+  isActive     Boolean    @default(true)
+  isFree       Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // 关联关系
+  category      Category        @relation(fields: [categoryId], references: [id])
+  purchases     Purchase[]
+  orderItems    OrderItem[]
+  videoTags     VideoTag[]
+  videoProgress VideoProgress[]
+  chapterProgress ChapterProgress[]
+
+  @@map("videos")
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([isFree])
+  @@index([price])
+  @@index([rating])
+  @@index([createdAt])
+  @@index([difficulty])
+}
+
+// 难度枚举
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+// 标签模型
+model Tag {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  color     String?
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // 关联关系
+  videoTags VideoTag[]
+
+  @@map("tags")
+  @@index([name])
+  @@index([isActive])
+}
+
+// 视频标签关联
+model VideoTag {
+  id      String @id @default(cuid())
+  videoId String
+  tagId   String
+
+  // 关联关系
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  tag   Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, tagId])
+  @@map("video_tags")
+  @@index([videoId])
+  @@index([tagId])
+}
+
+// 购买记录
+model Purchase {
+  id        String   @id @default(cuid())
+  userId    String
+  videoId   String
+  price     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+
+  // 关联关系
+  user  User  @relation(fields: [userId], references: [id])
+  video Video @relation(fields: [videoId], references: [id])
+
+  @@unique([userId, videoId])
+  @@map("purchases")
+  @@index([userId])
+  @@index([videoId])
+  @@index([createdAt])
+}
+
+// 订单模型
+model Order {
+  id            String      @id @default(cuid())
+  userId        String
+  totalAmount   Decimal     @db.Decimal(10, 2)
+  status        OrderStatus @default(PENDING)
+  paymentMethod String?
+  paymentId     String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // 关联关系
+  user        User         @relation(fields: [userId], references: [id])
+  orderItems  OrderItem[]
+  commissions Commission[]
+
+  @@map("orders")
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([paymentId])
+}
+
+// 订单状态枚举
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+// 订单项
+model OrderItem {
+  id      String  @id @default(cuid())
+  orderId String
+  videoId String
+  price   Decimal @db.Decimal(10, 2)
+  
+  // 关联关系
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id])
+
+  @@map("order_items")
+  @@index([orderId])
+  @@index([videoId])
+}
+
+// 佣金记录
+model Commission {
+  id          String          @id @default(cuid())
+  userId      String
+  orderId     String
+  amount      Decimal         @db.Decimal(10, 2)
+  rate        Decimal         @db.Decimal(5, 4) // 佣金比例
+  level       Int             @default(1) // 佣金层级
+  status      CommissionStatus @default(PENDING)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // 关联关系
+  user        User         @relation(fields: [userId], references: [id])
+  order       Order        @relation(fields: [orderId], references: [id])
+  withdrawals WithdrawalCommission[]
+
+  @@map("commissions")
+  @@index([userId])
+  @@index([orderId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([level])
+}
+
+// 佣金状态枚举
+enum CommissionStatus {
+  PENDING
+  CONFIRMED
+  PAID
+  CANCELLED
+}
+
+// 提现记录
+model Withdrawal {
+  id          String           @id @default(cuid())
+  userId      String
+  amount      Decimal          @db.Decimal(10, 2)
+  fee         Decimal          @db.Decimal(10, 2) @default(0)
+  actualAmount Decimal         @db.Decimal(10, 2)
+  method      String           // 提现方式
+  account     String           // 提现账户
+  status      WithdrawalStatus @default(PENDING)
+  processedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // 关联关系
+  user        User                   @relation(fields: [userId], references: [id])
+  commissions WithdrawalCommission[]
+
+  @@map("withdrawals")
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([processedAt])
+}
+
+// 提现状态枚举
+enum WithdrawalStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  REJECTED
+}
+
+// 提现佣金关联
+model WithdrawalCommission {
+  id           String @id @default(cuid())
+  withdrawalId String
+  commissionId String
+
+  // 关联关系
+  withdrawal Withdrawal @relation(fields: [withdrawalId], references: [id], onDelete: Cascade)
+  commission Commission @relation(fields: [commissionId], references: [id], onDelete: Cascade)
+
+  @@unique([withdrawalId, commissionId])
+  @@map("withdrawal_commissions")
+  @@index([withdrawalId])
+  @@index([commissionId])
+}
+
+// 视频学习进度
+model VideoProgress {
+  id              String   @id @default(cuid())
+  userId          String
+  videoId         String
+  progressPercent Int      @default(0) // 0-100
+  watchTime       Int      @default(0) // 观看时长(秒)
+  isCompleted     Boolean  @default(false)
+  lastWatchedAt   DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // 关联关系
+  user  User  @relation(fields: [userId], references: [id])
+  video Video @relation(fields: [videoId], references: [id])
+
+  @@unique([userId, videoId])
+  @@map("video_progress")
+  @@index([userId])
+  @@index([videoId])
+  @@index([isCompleted])
+  @@index([lastWatchedAt])
+}
+
+// 章节学习进度
+model ChapterProgress {
+  id              String   @id @default(cuid())
+  userId          String
+  videoId         String
+  chapterId       String   // 章节ID
+  progressPercent Int      @default(0) // 0-100
+  watchTime       Int      @default(0) // 观看时长(秒)
+  isCompleted     Boolean  @default(false)
+  lastWatchedAt   DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // 关联关系
+  user  User  @relation(fields: [userId], references: [id])
+  video Video @relation(fields: [videoId], references: [id])
+
+  @@unique([userId, videoId, chapterId])
+  @@map("chapter_progress")
+  @@index([userId])
+  @@index([videoId])
+  @@index([chapterId])
+  @@index([isCompleted])
+  @@index([lastWatchedAt])
+}

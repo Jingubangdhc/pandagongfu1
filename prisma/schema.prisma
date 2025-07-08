@@ -16,8 +16,10 @@ model User {
   username      String   @unique
   email         String   @unique
   password      String
+  name          String?  // 用户显示名称
   phone         String?
   avatar        String?
+  imageUrl      String?  // 用户头像URL（兼容性字段）
   role          String   @default("USER") // USER, ADMIN, SUPER_ADMIN
   gender        String?  // MALE, FEMALE, OTHER
   birthday      DateTime?
@@ -36,7 +38,14 @@ model User {
   commissions   Commission[] @relation("UserCommissions")
   fromCommissions Commission[] @relation("FromUserCommissions")
   withdrawals   Withdrawal[]
+  videoProgress VideoProgress[]
+  chapterProgress ChapterProgress[]
+  errorLogs     ErrorLog[]
 
+  // 性能优化索引
+  @@index([role, isActive])
+  @@index([createdAt])
+  @@index([referrerId])
   @@map("users")
 }
 
@@ -46,6 +55,12 @@ model Category {
   name        String   @unique
   description String?
   slug        String   @unique
+  icon        String?  // 分类图标
+  color       String?  // 分类颜色
+  order       Int      @default(0) // 排序
+  parentId    String?  // 父分类ID
+  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -53,6 +68,10 @@ model Category {
   // 关联关系
   videos      Video[]
 
+  // 性能优化索引
+  @@index([isActive])
+  @@index([parentId, isActive])
+  @@index([order, isActive])
   @@map("categories")
 }
 
@@ -82,7 +101,18 @@ model Video {
   chapters      Chapter[]
   purchases     Purchase[]
   orderItems    OrderItem[]
+  videoTags     VideoTag[]
+  videoProgress VideoProgress[]
 
+  // 性能优化索引
+  @@index([categoryId, isActive])
+  @@index([isActive, isFree])
+  @@index([price, isActive])
+  @@index([students, isActive])
+  @@index([rating, isActive])
+  @@index([createdAt, isActive])
+  @@index([difficulty, isActive])
+  @@index([instructor, isActive])
   @@map("videos")
 }
 
@@ -98,6 +128,9 @@ model Chapter {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // 关联关系
+  chapterProgress ChapterProgress[]
+
   @@map("chapters")
 }
 
@@ -110,11 +143,17 @@ model Purchase {
   video     Video    @relation(fields: [videoId], references: [id])
   price     Float
   orderId   String?
+  paymentMethod String? // stripe, alipay, wechat
   status    String   @default("COMPLETED") // PENDING, COMPLETED, FAILED, REFUNDED
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, videoId])
+  // 性能优化索引
+  @@index([userId, status])
+  @@index([videoId, status])
+  @@index([createdAt])
+  @@index([orderId])
   @@map("purchases")
 }
 
@@ -133,7 +172,14 @@ model Order {
 
   // 关联关系
   items         OrderItem[]
+  commissions   Commission[]
 
+  // 性能优化索引
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([paymentMethod, status])
+  @@index([transactionId])
+  @@index([paidAt])
   @@map("orders")
 }
 
@@ -146,43 +192,63 @@ model OrderItem {
   video   Video  @relation(fields: [videoId], references: [id])
   title   String
   price   Float
+  quantity Int   @default(1)
 
   @@map("order_items")
 }
 
 // 佣金表
 model Commission {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation("UserCommissions", fields: [userId], references: [id])
-  fromUserId String
-  fromUser   User     @relation("FromUserCommissions", fields: [fromUserId], references: [id])
-  orderId    String?
-  amount     Float
-  level      Int      // 1 or 2
-  status     String   @default("PENDING") // PENDING, CONFIRMED, PAID
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation("UserCommissions", fields: [userId], references: [id])
+  fromUserId   String
+  fromUser     User        @relation("FromUserCommissions", fields: [fromUserId], references: [id])
+  orderId      String?
+  order        Order?      @relation(fields: [orderId], references: [id])
+  purchaseId   String?     // 关联的购买记录
+  withdrawalId String?
+  withdrawal   Withdrawal? @relation(fields: [withdrawalId], references: [id])
+  amount       Float
+  level        Int         // 1 or 2
+  status       String      @default("PENDING") // PENDING, CONFIRMED, PAID
+  paidAt       DateTime?   // 支付时间
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
+  // 性能优化索引
+  @@index([userId, status])
+  @@index([fromUserId, status])
+  @@index([orderId])
+  @@index([withdrawalId])
+  @@index([status, createdAt])
+  @@index([level, status])
   @@map("commissions")
 }
 
 // 提现表
 model Withdrawal {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  amount      Float
-  fee         Float    @default(0)
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id])
+  commissions  Commission[]
+  amount       Float
+  fee          Float        @default(0)
   actualAmount Float
-  method      String   // BANK_CARD, ALIPAY, WECHAT_PAY
-  accountInfo String   // JSON字符串存储账户信息
-  status      String   @default("PENDING") // PENDING, PROCESSING, COMPLETED, REJECTED
-  remark      String?
-  processedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  method       String       // BANK_CARD, ALIPAY, WECHAT_PAY
+  accountInfo  String       // JSON字符串存储账户信息
+  status       String       @default("PENDING") // PENDING, PROCESSING, COMPLETED, REJECTED
+  remark       String?
+  processedAt  DateTime?
+  completedAt  DateTime?    // 完成时间
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
+  // 性能优化索引
+  @@index([userId, status])
+  @@index([status, createdAt])
+  @@index([method, status])
+  @@index([processedAt])
   @@map("withdrawals")
 }
 
@@ -208,4 +274,112 @@ model Setting {
   updatedAt DateTime @updatedAt
 
   @@map("settings")
+}
+
+// 标签表
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  color       String?  // 标签颜色
+  icon        String?  // 标签图标
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联关系
+  videoTags   VideoTag[]
+
+  @@map("tags")
+}
+
+// 视频标签关联表（多对多）
+model VideoTag {
+  id      String @id @default(cuid())
+  videoId String
+  tagId   String
+  video   Video  @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, tagId])
+  // 性能优化索引
+  @@index([videoId])
+  @@index([tagId])
+  @@map("video_tags")
+}
+
+// 视频学习进度表
+model VideoProgress {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videoId         String
+  video           Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  currentTime     Int      @default(0) // 当前播放时间（秒）
+  totalTime       Int      @default(0) // 视频总时长（秒）
+  progressPercent Float    @default(0) // 进度百分比 (0-100)
+  isCompleted     Boolean  @default(false) // 是否完成
+  lastWatchedAt   DateTime @default(now()) // 最后观看时间
+  completedAt     DateTime? // 完成时间
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, videoId])
+  // 性能优化索引
+  @@index([userId, lastWatchedAt])
+  @@index([videoId, isCompleted])
+  @@index([isCompleted, completedAt])
+  @@index([progressPercent])
+  @@map("video_progress")
+}
+
+// 章节学习进度表
+model ChapterProgress {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapterId     String
+  chapter       Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  currentTime   Int      @default(0) // 当前播放时间（秒）
+  totalTime     Int      @default(0) // 章节总时长（秒）
+  progressPercent Float  @default(0) // 进度百分比 (0-100)
+  isCompleted   Boolean  @default(false) // 是否完成
+  lastWatchedAt DateTime @default(now()) // 最后观看时间
+  completedAt   DateTime? // 完成时间
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, chapterId])
+  // 性能优化索引
+  @@index([userId, lastWatchedAt])
+  @@index([chapterId, isCompleted])
+  @@index([isCompleted, completedAt])
+  @@map("chapter_progress")
+}
+
+// 错误日志模型
+model ErrorLog {
+  id             String   @id @default(cuid())
+  message        String   // 错误消息
+  stack          String?  // 错误堆栈
+  componentStack String?  // React组件堆栈
+  url            String?  // 发生错误的URL
+  userAgent      String?  // 用户代理
+  clientIP       String?  // 客户端IP
+  userId         String?  // 用户ID（如果已登录）
+  severity       String   @default("error") // 错误严重程度: info, warning, error, critical
+  resolved       Boolean  @default(false) // 是否已解决
+  timestamp      DateTime @default(now()) // 错误发生时间
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // 关联用户（可选）
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // 性能优化索引
+  @@index([severity, timestamp])
+  @@index([resolved, timestamp])
+  @@index([userId, timestamp])
+  @@index([timestamp])
+  @@map("error_logs")
 }

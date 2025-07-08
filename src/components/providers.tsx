@@ -13,7 +13,7 @@ interface User {
 
 interface UserContextType {
   user: User | null
-  login: (user: User) => void
+  login: (user: User, token?: string) => void
   logout: () => void
   isLoading: boolean
 }
@@ -30,6 +30,7 @@ export function useUser() {
 
 // 购物车上下文
 interface CartItem {
+  id: string
   videoId: string
   title: string
   price: number
@@ -42,6 +43,8 @@ interface CartContextType {
   removeItem: (videoId: string) => void
   clearCart: () => void
   total: number
+  getTotalPrice: () => number
+  getTotalItems: () => number
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -59,26 +62,55 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
 
+  // 验证token并获取用户信息
+  const verifyToken = async (token: string) => {
+    try {
+      const response = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        return userData.user
+      }
+      return null
+    } catch (error) {
+      console.error('Token verification failed:', error)
+      return null
+    }
+  }
+
   // 初始化用户状态
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      // 这里应该验证token并获取用户信息
-      // 暂时使用模拟数据
-      setUser({
-        id: '1',
-        email: 'user@example.com',
-        username: 'testuser',
-        role: 'USER'
-      })
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('token')
+      if (token) {
+        const userData = await verifyToken(token)
+        if (userData) {
+          setUser(userData)
+        } else {
+          // Token无效，清除本地存储
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+        }
+      }
+      setIsLoading(false)
     }
-    setIsLoading(false)
+
+    initializeAuth()
   }, [])
 
   // 用户相关方法
-  const login = (userData: User) => {
+  const login = (userData: User, token?: string) => {
     setUser(userData)
     localStorage.setItem('user', JSON.stringify(userData))
+    if (token) {
+      localStorage.setItem('token', token)
+    }
   }
 
   const logout = () => {
@@ -106,9 +138,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   const total = cartItems.reduce((sum, item) => sum + item.price, 0)
 
+  const getTotalPrice = () => total
+  const getTotalItems = () => cartItems.length
+
   return (
     <UserContext.Provider value={{ user, login, logout, isLoading }}>
-      <CartContext.Provider value={{ items: cartItems, addItem, removeItem, clearCart, total }}>
+      <CartContext.Provider value={{ items: cartItems, addItem, removeItem, clearCart, total, getTotalPrice, getTotalItems }}>
         {children}
       </CartContext.Provider>
     </UserContext.Provider>

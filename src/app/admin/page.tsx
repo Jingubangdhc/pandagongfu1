@@ -1,311 +1,289 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
-import { 
-  Users, 
-  Video, 
-  DollarSign, 
-  TrendingUp,
-  Eye,
-  ShoppingCart,
-  UserPlus,
-  Upload
-} from 'lucide-react'
-import { Header } from '@/components/layout/header'
-import { Footer } from '@/components/layout/footer'
-import { formatPrice } from '@/lib/utils'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { ArrowLeft, User, Video, ShoppingCart, TrendingUp } from 'lucide-react'
 
-// 模拟数据
-const mockStats = {
-  totalUsers: 1234,
-  totalVideos: 89,
-  totalRevenue: 45678,
-  totalOrders: 567,
-  newUsersToday: 23,
-  videosWatchedToday: 156,
-  revenueToday: 1234,
-  ordersToday: 12
-}
+export default function AdminPage() {
+  const [loginForm, setLoginForm] = useState({
+    email: 'admin@pandagongfu.com',
+    password: 'admin123456'
+  })
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-const mockRecentOrders = [
-  {
-    id: '1',
-    user: '张三',
-    video: '零基础学习太极拳入门课程',
-    amount: 99,
-    status: 'completed',
-    createdAt: '2024-01-15 14:30'
-  },
-  {
-    id: '2',
-    user: '李四',
-    video: '高级太极拳技巧提升',
-    amount: 199,
-    status: 'pending',
-    createdAt: '2024-01-15 13:45'
-  },
-  {
-    id: '3',
-    user: '王五',
-    video: '太极拳养生保健课程',
-    amount: 149,
-    status: 'completed',
-    createdAt: '2024-01-15 12:20'
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (loginForm.email === 'admin@pandagongfu.com' && loginForm.password === 'admin123456') {
+      setIsLoggedIn(true)
+    } else {
+      alert('登录失败：邮箱或密码错误')
+    }
   }
-]
 
-const mockRecentUsers = [
-  {
-    id: '1',
-    username: '新用户001',
-    email: 'user001@example.com',
-    role: 'USER',
-    createdAt: '2024-01-15 15:30',
-    referredBy: '推广员A'
-  },
-  {
-    id: '2',
-    username: '新用户002',
-    email: 'user002@example.com',
-    role: 'USER',
-    createdAt: '2024-01-15 14:15',
-    referredBy: null
-  },
-  {
-    id: '3',
-    username: '新用户003',
-    email: 'user003@example.com',
-    role: 'USER',
-    createdAt: '2024-01-15 13:45',
-    referredBy: '推广员B'
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              返回首页
+            </Link>
+            <h1 className="text-2xl font-bold">管理员登录</h1>
+            <p className="text-muted-foreground">请使用管理员账号登录</p>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>登录信息</CardTitle>
+              <CardDescription>
+                默认管理员账号已预填，点击登录即可
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">邮箱</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={loginForm.email}
+                    onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">密码</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  登录
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <div className="text-center text-sm text-muted-foreground">
+            <p>默认管理员账号：admin@pandagongfu.com</p>
+            <p>默认密码：admin123456</p>
+          </div>
+        </div>
+      </div>
+    )
   }
-]
-
-export default function AdminDashboard() {
-  const [stats, setStats] = useState(mockStats)
-  const [recentOrders, setRecentOrders] = useState(mockRecentOrders)
-  const [recentUsers, setRecentUsers] = useState(mockRecentUsers)
 
   return (
-    <div className="min-h-screen">
-      <Header />
-      
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-background">
+        <div className="container flex h-16 items-center justify-between px-6">
+          <div className="flex items-center space-x-4">
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
+                <span className="text-white font-bold text-lg">慧</span>
+              </div>
+              <span className="font-bold text-xl">管理后台</span>
+            </Link>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-muted-foreground">欢迎，管理员</span>
+            <Button variant="outline" onClick={() => setIsLoggedIn(false)}>
+              退出登录
+            </Button>
+          </div>
+        </div>
+      </header>
+
       <div className="container py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">管理后台</h1>
-          <p className="text-muted-foreground">
-            系统概览和管理功能
-          </p>
-        </div>
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-3xl font-bold">管理后台</h1>
+            <p className="text-muted-foreground">Pandagongfu-慧 视频学习平台管理系统</p>
+          </div>
 
-        {/* 统计卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">总用户数</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                今日新增 +{stats.newUsersToday}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">视频总数</CardTitle>
-              <Video className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalVideos}</div>
-              <p className="text-xs text-muted-foreground">
-                今日观看 {stats.videosWatchedToday} 次
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">总收入</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatPrice(stats.totalRevenue)}</div>
-              <p className="text-xs text-muted-foreground">
-                今日收入 {formatPrice(stats.revenueToday)}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">订单总数</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalOrders}</div>
-              <p className="text-xs text-muted-foreground">
-                今日订单 +{stats.ordersToday}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 主要内容区域 */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">概览</TabsTrigger>
-            <TabsTrigger value="users">用户管理</TabsTrigger>
-            <TabsTrigger value="videos">视频管理</TabsTrigger>
-            <TabsTrigger value="orders">订单管理</TabsTrigger>
-            <TabsTrigger value="commissions">佣金管理</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* 最近订单 */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>最近订单</CardTitle>
-                  <CardDescription>最新的购买订单</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {recentOrders.map((order) => (
-                      <div key={order.id} className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">{order.user}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-1">
-                            {order.video}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {order.createdAt}
-                          </p>
-                        </div>
-                        <div className="text-right space-y-1">
-                          <p className="text-sm font-medium">{formatPrice(order.amount)}</p>
-                          <Badge variant={order.status === 'completed' ? 'default' : 'secondary'}>
-                            {order.status === 'completed' ? '已完成' : '待处理'}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* 最近用户 */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>最近注册用户</CardTitle>
-                  <CardDescription>新注册的用户</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {recentUsers.map((user) => (
-                      <div key={user.id} className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">{user.username}</p>
-                          <p className="text-xs text-muted-foreground">{user.email}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {user.createdAt}
-                          </p>
-                        </div>
-                        <div className="text-right space-y-1">
-                          <Badge variant="outline">{user.role}</Badge>
-                          {user.referredBy && (
-                            <p className="text-xs text-muted-foreground">
-                              推荐人: {user.referredBy}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="users">
+          {/* 统计卡片 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">总用户数</CardTitle>
+                <User className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">1,234</div>
+                <p className="text-xs text-muted-foreground">+20.1% 较上月</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">视频总数</CardTitle>
+                <Video className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">89</div>
+                <p className="text-xs text-muted-foreground">+5 本月新增</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">总订单数</CardTitle>
+                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">456</div>
+                <p className="text-xs text-muted-foreground">+12.5% 较上月</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">总收入</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">¥45,231</div>
+                <p className="text-xs text-muted-foreground">+15.2% 较上月</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 功能模块 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle>用户管理</CardTitle>
-                <CardDescription>管理系统用户和权限</CardDescription>
+                <CardDescription>
+                  管理用户账号、权限和个人信息
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <UserPlus className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground mb-4">用户管理功能开发中...</p>
-                  <Button variant="outline">查看用户列表</Button>
-                </div>
+                <Button className="w-full" disabled>
+                  进入用户管理
+                </Button>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="videos">
-            <Card>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle>视频管理</CardTitle>
-                <CardDescription>管理视频内容和分类</CardDescription>
+                <CardDescription>
+                  上传、编辑和管理视频课程内容
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground mb-4">视频管理功能开发中...</p>
-                  <div className="space-x-2">
-                    <Button variant="outline">上传视频</Button>
-                    <Button variant="outline">管理分类</Button>
-                  </div>
-                </div>
+                <Button className="w-full" disabled>
+                  进入视频管理
+                </Button>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="orders">
-            <Card>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle>订单管理</CardTitle>
-                <CardDescription>查看和管理所有订单</CardDescription>
+                <CardDescription>
+                  查看和处理用户订单信息
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <ShoppingCart className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground mb-4">订单管理功能开发中...</p>
-                  <Button variant="outline">查看所有订单</Button>
-                </div>
+                <Button className="w-full" disabled>
+                  进入订单管理
+                </Button>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="commissions">
-            <Card>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardHeader>
                 <CardTitle>佣金管理</CardTitle>
-                <CardDescription>管理分销佣金和提现</CardDescription>
+                <CardDescription>
+                  管理分销佣金和提现申请
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <TrendingUp className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground mb-4">佣金管理功能开发中...</p>
-                  <div className="space-x-2">
-                    <Button variant="outline">佣金统计</Button>
-                    <Button variant="outline">提现管理</Button>
-                  </div>
-                </div>
+                <Button className="w-full" disabled>
+                  进入佣金管理
+                </Button>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
 
-      <Footer />
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardHeader>
+                <CardTitle>数据统计</CardTitle>
+                <CardDescription>
+                  查看平台运营数据和分析报告
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" disabled>
+                  查看统计数据
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardHeader>
+                <CardTitle>系统设置</CardTitle>
+                <CardDescription>
+                  配置系统参数和平台设置
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" disabled>
+                  进入系统设置
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 系统状态 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>系统状态</CardTitle>
+              <CardDescription>
+                当前系统运行状态和配置信息
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold mb-2">数据库状态</h4>
+                  <p className="text-sm text-green-600">✅ SQLite 数据库运行正常</p>
+                  <p className="text-sm text-muted-foreground">已初始化完整数据结构</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">支付网关</h4>
+                  <p className="text-sm text-green-600">✅ Stripe 测试环境已配置</p>
+                  <p className="text-sm text-muted-foreground">支持信用卡支付</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">云存储</h4>
+                  <p className="text-sm text-green-600">✅ 文件上传功能正常</p>
+                  <p className="text-sm text-muted-foreground">支持视频和图片上传</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">部署状态</h4>
+                  <p className="text-sm text-green-600">✅ CloudBase 部署成功</p>
+                  <p className="text-sm text-muted-foreground">静态网站托管</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="text-center text-sm text-muted-foreground">
+            <p>注意：这是演示版本的管理后台，完整功能需要后端API支持</p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import jwt from 'jsonwebtoken'
+import { rateLimit, setSecurityHeaders, validateCSRFToken, rateLimitConfigs } from '@/lib/security'
 
 // 需要认证的路径
 const protectedPaths = [
   '/dashboard',
   '/api/payments',
   '/api/user',
+  '/api/commissions',
+  '/api/withdrawals',
   '/checkout'
 ]
 
@@ -21,91 +23,80 @@ const publicApiPaths = [
   '/api/auth/login',
   '/api/auth/register',
   '/api/videos',
-  '/api/categories'
+  '/api/categories',
+  '/api/debug'
 ]
 
-function verifyToken(token: string) {
-  try {
-    return jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
-  } catch {
-    return null
-  }
-}
+// JWT验证在Edge Runtime中不可用，由API路由自己处理认证
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  
-  // 检查是否是受保护的路径
-  const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path))
-  const isAdminPath = adminPaths.some(path => pathname.startsWith(path))
-  const isPublicApiPath = publicApiPaths.some(path => pathname.startsWith(path))
-  
-  // 公开API路径直接通过
-  if (isPublicApiPath) {
-    return NextResponse.next()
+
+  // 应用速率限制
+  let rateLimitResponse = null
+
+  // 根据路径类型应用不同的速率限制
+  if (pathname.startsWith('/api/auth/')) {
+    // 认证相关API使用严格限制
+    rateLimitResponse = rateLimit(rateLimitConfigs.strict)(request)
+  } else if (pathname.startsWith('/api/upload')) {
+    // 文件上传使用上传限制
+    rateLimitResponse = rateLimit(rateLimitConfigs.upload)(request)
+  } else if (pathname.startsWith('/api/')) {
+    // 其他API使用中等限制
+    rateLimitResponse = rateLimit(rateLimitConfigs.moderate)(request)
+  } else {
+    // 页面访问使用宽松限制
+    rateLimitResponse = rateLimit(rateLimitConfigs.lenient)(request)
   }
-  
-  // 获取token
-  const token = request.cookies.get('auth-token')?.value || 
-                request.headers.get('authorization')?.replace('Bearer ', '')
-  
-  // 如果是受保护的路径但没有token
-  if (isProtectedPath && !token) {
-    if (pathname.startsWith('/api/')) {
-      return NextResponse.json(
-        { error: '未授权访问' },
-        { status: 401 }
-      )
-    }
-    // 重定向到登录页面
+
+  if (rateLimitResponse) {
+    return setSecurityHeaders(rateLimitResponse)
+  }
+
+  // 检查是否是受保护的路径
+  const isProtectedPagePath = protectedPaths.some(path =>
+    pathname.startsWith(path) && !pathname.startsWith('/api/')
+  )
+  const isAdminPagePath = adminPaths.some(path =>
+    pathname.startsWith(path) && !pathname.startsWith('/api/')
+  )
+  const isPublicApiPath = publicApiPaths.some(path => pathname.startsWith(path))
+
+  // 公开API路径直接通过（但仍应用安全头部）
+  if (isPublicApiPath) {
+    const response = NextResponse.next()
+    return setSecurityHeaders(response)
+  }
+
+  // API路径直接通过，让API路由自己处理认证（但仍应用安全头部）
+  if (pathname.startsWith('/api/')) {
+    const response = NextResponse.next()
+    return setSecurityHeaders(response)
+  }
+
+  // 获取token（仅用于页面路由）
+  const token = request.cookies.get('auth-token')?.value
+
+  // 如果是受保护的页面路径但没有token
+  if (isProtectedPagePath && !token) {
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirect', pathname)
-    return NextResponse.redirect(loginUrl)
+    const response = NextResponse.redirect(loginUrl)
+    return setSecurityHeaders(response)
   }
-  
-  // 验证token
-  if (token) {
-    const decoded = verifyToken(token)
-    
-    if (!decoded) {
-      // token无效
-      if (pathname.startsWith('/api/')) {
-        return NextResponse.json(
-          { error: '无效的访问令牌' },
-          { status: 401 }
-        )
-      }
-      // 清除无效token并重定向到登录页面
-      const response = NextResponse.redirect(new URL('/login', request.url))
-      response.cookies.delete('auth-token')
-      return response
-    }
-    
-    // 检查管理员权限
-    if (isAdminPath && decoded.role !== 'ADMIN') {
-      if (pathname.startsWith('/api/')) {
-        return NextResponse.json(
-          { error: '权限不足' },
-          { status: 403 }
-        )
-      }
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
-    
-    // 将用户信息添加到请求头中，供API路由使用
-    const requestHeaders = new Headers(request.headers)
-    requestHeaders.set('x-user-id', decoded.userId)
-    requestHeaders.set('x-user-email', decoded.email)
-    requestHeaders.set('x-user-role', decoded.role)
-    
-    return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
-    })
+
+  // 如果是管理员页面路径但没有token
+  if (isAdminPagePath && !token) {
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirect', pathname)
+    const response = NextResponse.redirect(loginUrl)
+    return setSecurityHeaders(response)
   }
-  
-  return NextResponse.next()
+
+  // 为所有响应添加安全头部
+  const response = NextResponse.next()
+  return setSecurityHeaders(response)
 }
 
 export const config = {

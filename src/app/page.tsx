@@ -1,68 +1,49 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { Play, Star, Users, Clock, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Header } from '@/components/layout/header'
-import { Footer } from '@/components/layout/footer'
-import { formatPrice } from '@/lib/utils'
-
-// 模拟数据
-const featuredVideos = [
-  {
-    id: '1',
-    title: '太极拳入门心法 - 阴阳调和之道',
-    description: '从太极哲学入手，领悟阴阳调和的奥秘，掌握太极拳的核心精神与基础功法。',
-    thumbnail: '/api/placeholder/400/225',
-    price: 99,
-    originalPrice: 199,
-    duration: 3600, // 60分钟
-    rating: 4.8,
-    students: 1234,
-    instructor: '李玄德师父',
-    category: '太极拳'
-  },
-  {
-    id: '2',
-    title: '武当内家功法 - 丹田修炼秘传',
-    description: '传承武当山千年内功心法，修炼丹田真气，强身健体，延年益寿。',
-    thumbnail: '/api/placeholder/400/225',
-    price: 199,
-    originalPrice: 299,
-    duration: 5400, // 90分钟
-    rating: 4.9,
-    students: 856,
-    instructor: '王清虚道长',
-    category: '内功'
-  },
-  {
-    id: '3',
-    title: '八段锦养生功 - 古法新传',
-    description: '传统八段锦功法，结合现代养生理念，调理五脏六腑，平衡身心。',
-    thumbnail: '/api/placeholder/400/225',
-    price: 79,
-    originalPrice: 159,
-    duration: 2700, // 45分钟
-    rating: 4.7,
-    students: 2156,
-    instructor: '张慧明师父',
-    category: '养生功'
-  }
-]
-
-const categories = [
-  { name: '太极拳法', count: 25, icon: '☯️' },
-  { name: '内功心法', count: 18, icon: '🧘' },
-  { name: '八段锦', count: 12, icon: '🌸' },
-  { name: '五禽戏', count: 8, icon: '🦅' },
-  { name: '易筋经', count: 6, icon: '🏔️' },
-  { name: '武当功法', count: 4, icon: '⛰️' }
-]
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen">
-      <Header />
+    <div className="min-h-screen bg-background">
+      {/* 简化的Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
+        <div className="container flex h-16 items-center justify-between px-6">
+          <Link href="/" className="flex items-center space-x-2">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
+              <span className="text-white font-bold text-lg">慧</span>
+            </div>
+            <span className="font-bold text-xl bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
+              Pandagongfu-慧
+            </span>
+          </Link>
+
+          <nav className="hidden md:flex items-center space-x-6">
+            <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
+              首页
+            </Link>
+            <Link href="/courses" className="text-sm font-medium hover:text-primary transition-colors">
+              课程
+            </Link>
+            <Link href="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
+              学习中心
+            </Link>
+          </nav>
+
+          <div className="flex items-center space-x-4">
+            <Link href="/login">
+              <Button variant="ghost" size="sm">
+                登录
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button size="sm">
+                注册
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </header>
       
       {/* 英雄区域 */}
       <section className="relative text-white overflow-hidden">
@@ -120,18 +101,10 @@ export default function HomePage() {
               </div>
             </div>
             <div className="relative">
-              <div className="aspect-video rounded-lg overflow-hidden shadow-2xl">
-                <Image
-                  src="/api/placeholder/600/400"
-                  alt="学习视频预览"
-                  width={600}
-                  height={400}
-                  className="object-cover w-full h-full"
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Button size="lg" className="rounded-full w-16 h-16 bg-white/20 hover:bg-white/30 backdrop-blur-sm">
-                    <Play className="h-8 w-8 text-white" />
-                  </Button>
+              <div className="aspect-video rounded-lg overflow-hidden shadow-2xl bg-slate-700 flex items-center justify-center">
+                <div className="text-center">
+                  <Play className="h-16 w-16 text-white mx-auto mb-4" />
+                  <p className="text-white">学习视频预览</p>
                 </div>
               </div>
             </div>
@@ -139,180 +112,151 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 特色课程 */}
+      {/* 特色功法展示 */}
       <section className="py-16 bg-background">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">精选功法</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              千年传承的武学精髓，由资深师父亲授，助您领悟传统功夫的深邃智慧
+            <h2 className="text-3xl font-bold mb-4">精选功法课程</h2>
+            <p className="text-lg text-muted-foreground">
+              传承千年的武学精髓，现代化的学习体验
             </p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredVideos.map((video) => (
-              <Card key={video.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="relative aspect-video">
-                  <Image
-                    src={video.thumbnail}
-                    alt={video.title}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                    <Button size="sm" className="rounded-full">
-                      <Play className="h-4 w-4 mr-2" />
-                      预览
-                    </Button>
-                  </div>
-                  <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
-                    限时优惠
-                  </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* 太极拳课程 */}
+            <Card className="overflow-hidden">
+              <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <div className="text-white text-center">
+                  <Play className="h-12 w-12 mx-auto mb-2" />
+                  <p className="text-sm">太极拳基础</p>
                 </div>
-                
-                <CardHeader>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                    <span>{video.category}</span>
-                    <div className="flex items-center space-x-1">
-                      <Clock className="h-4 w-4" />
-                      <span>{Math.round(video.duration / 60)}分钟</span>
-                    </div>
-                  </div>
-                  <CardTitle className="line-clamp-2">{video.title}</CardTitle>
-                  <CardDescription className="line-clamp-2">
-                    {video.description}
-                  </CardDescription>
-                </CardHeader>
-                
-                <CardContent>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="flex items-center space-x-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-medium">{video.rating}</span>
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        ({video.students} 学员)
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-primary">
-                        {formatPrice(video.price)}
-                      </div>
-                      <div className="text-sm text-muted-foreground line-through">
-                        {formatPrice(video.originalPrice)}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                
-                <CardFooter>
-                  <Button className="w-full" asChild>
-                    <Link href={`/video/${video.id}`}>
-                      立即购买
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+              </div>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-semibold mb-2">太极拳入门</h3>
+                <p className="text-muted-foreground mb-4">
+                  从基础站桩开始，学习太极拳的核心理念和基本动作
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-primary">¥199</span>
+                  <Button>立即学习</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 八段锦课程 */}
+            <Card className="overflow-hidden">
+              <div className="aspect-video bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center">
+                <div className="text-white text-center">
+                  <Play className="h-12 w-12 mx-auto mb-2" />
+                  <p className="text-sm">八段锦养生</p>
+                </div>
+              </div>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-semibold mb-2">八段锦养生功</h3>
+                <p className="text-muted-foreground mb-4">
+                  古代养生功法，强身健体，调理气血，适合现代人练习
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-primary">¥149</span>
+                  <Button>立即学习</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 内功心法课程 */}
+            <Card className="overflow-hidden">
+              <div className="aspect-video bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                <div className="text-white text-center">
+                  <Play className="h-12 w-12 mx-auto mb-2" />
+                  <p className="text-sm">内功心法</p>
+                </div>
+              </div>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-semibold mb-2">内功心法秘传</h3>
+                <p className="text-muted-foreground mb-4">
+                  深入学习内功修炼方法，提升内在能量和身心健康
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-2xl font-bold text-primary">¥299</span>
+                  <Button>立即学习</Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          
+
           <div className="text-center mt-12">
-            <Button variant="outline" size="lg" asChild>
-              <Link href="/courses">
-                查看所有课程
+            <Link href="/courses">
+              <Button size="lg" variant="outline">
+                查看更多课程
                 <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* 课程分类 */}
+      {/* 特色功能介绍 */}
       <section className="py-16 bg-muted/50">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">课程分类</h2>
+            <h2 className="text-3xl font-bold mb-4">为什么选择Pandagongfu-慧</h2>
             <p className="text-lg text-muted-foreground">
-              丰富的课程分类，满足不同学习需求
+              专业的武学传承平台，为您提供最优质的学习体验
             </p>
           </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            {categories.map((category) => (
-              <Link
-                key={category.name}
-                href={`/category/${category.name}`}
-                className="group"
-              >
-                <Card className="text-center hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="pt-6">
-                    <div className="text-4xl mb-4">{category.icon}</div>
-                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                      {category.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {category.count} 门课程
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* 分销推广 */}
-      <section className="py-16 bg-background">
-        <div className="container">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-bold">
-                分享课程，赚取佣金
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                成为我们的分销伙伴，分享优质课程给朋友，每成功推荐一位用户购买课程，
-                您都能获得丰厚的佣金回报。
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Play className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">高清视频教学</h3>
+              <p className="text-muted-foreground">
+                专业摄制的高清视频，多角度展示每个动作细节
               </p>
-              <ul className="space-y-3">
-                <li className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span>一级推荐佣金：15%</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span>二级推荐佣金：5%</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span>实时结算，快速提现</span>
-                </li>
-                <li className="flex items-center space-x-3">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  <span>专业推广工具支持</span>
-                </li>
-              </ul>
-              <Button size="lg" asChild>
-                <Link href="/affiliate">
-                  立即加入分销
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
             </div>
-            <div className="relative">
-              <Image
-                src="/api/placeholder/500/400"
-                alt="分销推广"
-                width={500}
-                height={400}
-                className="rounded-lg shadow-lg"
-              />
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">名师亲授</h3>
+              <p className="text-muted-foreground">
+                汇聚各门派名师，传承正宗武学精髓
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">随时随地学习</h3>
+              <p className="text-muted-foreground">
+                支持多设备学习，随时随地练习武学功法
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Star className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">分享获益</h3>
+              <p className="text-muted-foreground">
+                推广课程获得佣金，传承武学的同时获得收益
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      <Footer />
+      {/* Footer */}
+      <footer className="border-t bg-muted/50">
+        <div className="container py-8">
+          <div className="text-center text-sm text-muted-foreground">
+            <p>&copy; 2024 Pandagongfu-慧. 传承武学智慧，弘扬传统文化。</p>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

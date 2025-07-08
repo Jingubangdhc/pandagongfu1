@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { Play, Star, Clock, Users, ShoppingCart } from 'lucide-react'
+import { VideoThumbnail } from '@/components/optimized/optimized-image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatPrice, formatDuration } from '@/lib/utils'
@@ -34,6 +34,7 @@ export function VideoCard({ video, showAddToCart = true }: VideoCardProps) {
     e.stopPropagation()
     
     addItem({
+      id: video.id,
       videoId: video.id,
       title: video.title,
       price: video.price,
@@ -54,11 +55,12 @@ export function VideoCard({ video, showAddToCart = true }: VideoCardProps) {
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 group">
       <Link href={`/video/${video.id}`}>
         <div className="relative aspect-video overflow-hidden">
-          <Image
+          <VideoThumbnail
             src={video.thumbnail || '/api/placeholder/400/225'}
             alt={video.title}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="transition-transform duration-300 group-hover:scale-105"
+            priority={false}
+            quality={85}
           />
           
           {/* 播放按钮覆盖层 */}

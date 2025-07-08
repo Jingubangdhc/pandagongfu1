@@ -1,0 +1,169 @@
+const AlipaySdk = require('alipay-sdk').default
+
+// 初始化支付宝SDK
+const alipaySdk = new AlipaySdk({
+  appId: process.env.ALIPAY_APP_ID!,
+  privateKey: process.env.ALIPAY_PRIVATE_KEY!,
+  alipayPublicKey: process.env.ALIPAY_PUBLIC_KEY!,
+  gateway: process.env.ALIPAY_GATEWAY_URL || 'https://openapi.alipaydev.com/gateway.do',
+  timeout: 5000,
+  camelCase: true,
+})
+
+export interface CreateAlipayOrderParams {
+  orderId: string
+  amount: number
+  subject: string
+  body?: string
+  notifyUrl?: string
+  returnUrl?: string
+}
+
+export interface AlipayPaymentResult {
+  qrCode: string
+  payUrl: string
+  orderId: string
+}
+
+/**
+ * 创建支付宝扫码支付订单
+ */
+export async function createAlipayQROrder(
+  params: CreateAlipayOrderParams
+): Promise<AlipayPaymentResult> {
+  try {
+    const { orderId, amount, subject, body, notifyUrl, returnUrl } = params
+
+    // 创建扫码支付订单
+    const result = await alipaySdk.exec('alipay.trade.precreate', {
+      notify_url: notifyUrl,
+      biz_content: JSON.stringify({
+        out_trade_no: orderId,
+        total_amount: amount.toFixed(2),
+        subject,
+        body: body || subject,
+        timeout_express: '30m', // 30分钟超时
+        product_code: 'FACE_TO_FACE_PAYMENT'
+      })
+    })
+
+    if (result.code !== '10000') {
+      throw new Error(`Alipay order creation failed: ${result.msg}`)
+    }
+
+    return {
+      qrCode: result.qr_code,
+      payUrl: result.qr_code,
+      orderId: result.out_trade_no,
+    }
+  } catch (error) {
+    console.error('Alipay QR order creation failed:', error)
+    throw new Error('Failed to create Alipay QR order')
+  }
+}
+
+/**
+ * 创建支付宝手机网站支付
+ */
+export async function createAlipayWapOrder(
+  params: CreateAlipayOrderParams
+): Promise<string> {
+  try {
+    const { orderId, amount, subject, body, notifyUrl, returnUrl } = params
+
+    const result = await alipaySdk.exec('alipay.trade.wap.pay', {
+      notify_url: notifyUrl,
+      return_url: returnUrl,
+      biz_content: JSON.stringify({
+        out_trade_no: orderId,
+        total_amount: amount.toFixed(2),
+        subject,
+        body: body || subject,
+        timeout_express: '30m',
+        product_code: 'QUICK_WAP_WAY',
+        quit_url: returnUrl,
+      })
+    })
+
+    return result as string // 返回支付页面URL
+  } catch (error) {
+    console.error('Alipay WAP order creation failed:', error)
+    throw new Error('Failed to create Alipay WAP order')
+  }
+}
+
+/**
+ * 验证支付宝回调签名
+ */
+export function verifyAlipayNotification(params: Record<string, string>): boolean {
+  try {
+    return alipaySdk.checkNotifySign(params)
+  } catch (error) {
+    console.error('Alipay notification verification failed:', error)
+    return false
+  }
+}
+
+/**
+ * 查询支付宝订单状态
+ */
+export async function queryAlipayOrder(orderId: string) {
+  try {
+    const result = await alipaySdk.exec('alipay.trade.query', {
+      bizContent: {
+        outTradeNo: orderId,
+      },
+    })
+
+    if (result.code !== '10000') {
+      throw new Error(`Alipay order query failed: ${result.msg}`)
+    }
+
+    return {
+      orderId: result.outTradeNo,
+      tradeNo: result.tradeNo,
+      tradeStatus: result.tradeStatus,
+      totalAmount: parseFloat(result.totalAmount),
+      buyerPayAmount: parseFloat(result.buyerPayAmount || '0'),
+      gmtPayment: result.gmtPayment,
+    }
+  } catch (error) {
+    console.error('Alipay order query failed:', error)
+    throw new Error('Failed to query Alipay order')
+  }
+}
+
+/**
+ * 创建支付宝退款
+ */
+export async function createAlipayRefund(
+  orderId: string,
+  refundAmount: number,
+  refundReason?: string
+) {
+  try {
+    const result = await alipaySdk.exec('alipay.trade.refund', {
+      bizContent: {
+        outTradeNo: orderId,
+        refundAmount: refundAmount.toFixed(2),
+        refundReason: refundReason || '用户申请退款',
+        outRequestNo: `${orderId}_refund_${Date.now()}`,
+      },
+    })
+
+    if (result.code !== '10000') {
+      throw new Error(`Alipay refund failed: ${result.msg}`)
+    }
+
+    return {
+      orderId: result.outTradeNo,
+      refundFee: parseFloat(result.refundFee),
+      gmtRefundPay: result.gmtRefundPay,
+    }
+  } catch (error) {
+    console.error('Alipay refund creation failed:', error)
+    throw new Error('Failed to create Alipay refund')
+  }
+}
+
+export { alipaySdk }

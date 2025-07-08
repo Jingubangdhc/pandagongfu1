@@ -9,38 +9,38 @@ async function main() {
   // 创建分类
   const categories = await Promise.all([
     prisma.category.upsert({
-      where: { name: '太极拳法' },
+      where: { name: 'Taiji Quan' },
       update: {},
       create: {
-        name: '太极拳法',
-        description: '传统太极拳法，阴阳调和，刚柔并济',
+        name: 'Taiji Quan',
+        description: 'Traditional Taiji martial arts, balancing yin and yang',
         slug: 'taiji-quan'
       }
     }),
     prisma.category.upsert({
-      where: { name: '内功心法' },
+      where: { name: 'Internal Arts' },
       update: {},
       create: {
-        name: '内功心法',
-        description: '武当内家功法，修炼丹田真气',
+        name: 'Internal Arts',
+        description: 'Wudang internal cultivation methods',
         slug: 'internal-arts'
       }
     }),
     prisma.category.upsert({
-      where: { name: '养生功法' },
+      where: { name: 'Health Qigong' },
       update: {},
       create: {
-        name: '养生功法',
-        description: '八段锦、五禽戏等传统养生功法',
+        name: 'Health Qigong',
+        description: 'Traditional health and wellness practices',
         slug: 'health-qigong'
       }
     }),
     prisma.category.upsert({
-      where: { name: '武当秘传' },
+      where: { name: 'Wudang Secrets' },
       update: {},
       create: {
-        name: '武当秘传',
-        description: '武当山传承的古法秘籍',
+        name: 'Wudang Secrets',
+        description: 'Ancient secret teachings from Wudang Mountain',
         slug: 'wudang-secrets'
       }
     })
@@ -54,7 +54,7 @@ async function main() {
     where: { email: 'admin@example.com' },
     update: {},
     create: {
-      username: 'Pandagongfu-慧 掌门',
+      username: 'Pandagongfu Admin',
       email: 'admin@example.com',
       password: adminPassword,
       role: 'ADMIN',
@@ -72,7 +72,7 @@ async function main() {
       where: { email: 'user1@example.com' },
       update: {},
       create: {
-        username: '张三',
+        username: 'Zhang San',
         email: 'user1@example.com',
         password: userPassword,
         role: 'USER',
@@ -84,7 +84,7 @@ async function main() {
       where: { email: 'user2@example.com' },
       update: {},
       create: {
-        username: '李四',
+        username: 'Li Si',
         email: 'user2@example.com',
         password: userPassword,
         role: 'USER',
@@ -104,16 +104,15 @@ async function main() {
       update: {},
       create: {
         id: 'video-1',
-        title: '太极拳入门心法 - 阴阳调和之道',
-        description: '从太极哲学入手，领悟阴阳调和的奥秘，掌握太极拳的核心精神与基础功法。课程涵盖：太极理论精髓、基础桩功、阴阳转换要领、入门套路演练等传统精华。',
+        title: 'Taiji Quan Fundamentals - The Way of Yin and Yang',
+        description: 'Learn the core principles of Taiji philosophy and master the fundamental techniques. This course covers: Taiji theory essentials, basic standing meditation, yin-yang transformation principles, and beginner forms.',
         thumbnail: '/api/placeholder/400/225',
         videoUrl: 'https://example.com/video1.mp4',
         price: 99,
         originalPrice: 199,
         duration: 3600, // 60分钟
-        instructor: '李玄德师父',
+        instructor: 'Master Li Xuande',
         categoryId: categories[0].id,
-        tags: '["入门", "基础", "24式"]',
         difficulty: 'BEGINNER',
         rating: 4.8
       }
@@ -123,16 +122,15 @@ async function main() {
       update: {},
       create: {
         id: 'video-2',
-        title: '武当内家功法 - 丹田修炼秘传',
-        description: '传承武当山千年内功心法，修炼丹田真气，强身健体，延年益寿。深入讲解：丹田运气法门、内息调理、真气运行路径、内功筑基要诀等武当秘传。',
+        title: 'Wudang Internal Arts - Dantian Cultivation Secrets',
+        description: 'Learn the thousand-year-old internal cultivation methods from Wudang Mountain. Master dantian energy cultivation for health and longevity. Covers: energy circulation methods, breath regulation, qi pathways, and foundation building.',
         thumbnail: '/api/placeholder/400/225',
         videoUrl: 'https://example.com/video2.mp4',
         price: 199,
         originalPrice: 299,
         duration: 5400, // 90分钟
-        instructor: '王清虚道长',
+        instructor: 'Daoist Wang Qingxu',
         categoryId: categories[1].id,
-        tags: '["进阶", "推手", "内功"]',
         difficulty: 'ADVANCED',
         rating: 4.9
       }
@@ -142,16 +140,15 @@ async function main() {
       update: {},
       create: {
         id: 'video-3',
-        title: '八段锦养生功 - 古法新传',
-        description: '传统八段锦功法，结合现代养生理念，调理五脏六腑，平衡身心。详解：八段锦起源、动作要领、呼吸配合、养生机理等精华内容。',
+        title: 'Eight Pieces of Brocade - Ancient Wellness Practice',
+        description: 'Traditional Baduanjin qigong combined with modern wellness concepts. Balance your body and mind through gentle movements. Covers: origins, movement principles, breathing techniques, and health benefits.',
         thumbnail: '/api/placeholder/400/225',
         videoUrl: 'https://example.com/video3.mp4',
         price: 149,
         originalPrice: 199,
         duration: 2700, // 45分钟
-        instructor: '张慧明师父',
+        instructor: 'Master Zhang Huiming',
         categoryId: categories[2].id,
-        tags: '["养生", "保健", "中老年"]',
         difficulty: 'BEGINNER',
         rating: 4.7
       }
@@ -161,16 +158,15 @@ async function main() {
       update: {},
       create: {
         id: 'video-4',
-        title: '武当剑法秘传 - 太乙玄门剑',
-        description: '武当山传承的古法剑术，融合道家哲学与武学精髓。课程包括：剑法心诀、基础剑式、太乙剑谱、剑意修炼等武当秘传剑法。',
+        title: 'Wudang Sword Secrets - Taiyi Mysterious Gate Sword',
+        description: 'Ancient sword techniques from Wudang Mountain, combining Daoist philosophy with martial arts essence. Includes: sword principles, basic forms, Taiyi sword manual, and sword spirit cultivation.',
         thumbnail: '/api/placeholder/400/225',
         videoUrl: 'https://example.com/video4.mp4',
         price: 179,
         originalPrice: 249,
         duration: 4200, // 70分钟
-        instructor: '赵无极真人',
+        instructor: 'Master Zhao Wuji',
         categoryId: categories[3].id,
-        tags: '["太极剑", "器械", "32式"]',
         difficulty: 'INTERMEDIATE',
         rating: 4.6
       }
@@ -180,18 +176,18 @@ async function main() {
       update: {},
       create: {
         id: 'video-5',
-        title: '免费体验：武学入门 - 站桩筑基',
-        description: '免费体验课程，传授武学修炼的根基 - 站桩功法。学习正确的站桩姿势、呼吸要领、意念导引等筑基要诀，为后续修炼打下坚实基础。',
+        title: 'Free Preview: Martial Arts Foundation - Standing Meditation',
+        description: 'Free preview course teaching the foundation of martial arts - standing meditation practice. Learn proper posture, breathing techniques, and mental focus for building a solid foundation.',
         thumbnail: '/api/placeholder/400/225',
         videoUrl: 'https://example.com/video5.mp4',
         price: 0, // 免费课程
         originalPrice: 0,
         duration: 1800, // 30分钟
-        instructor: '李玄德师父',
+        instructor: 'Master Li Xuande',
         categoryId: categories[0].id,
-        tags: '["免费", "体验", "基本功"]',
         difficulty: 'BEGINNER',
-        rating: 4.5
+        rating: 4.5,
+        isFree: true
       }
     })
   ])
@@ -205,28 +201,28 @@ async function main() {
         data: [
           {
             videoId: video.id,
-            title: '课程介绍',
+            title: 'Course Introduction',
             duration: 300,
             order: 1,
             isFree: true
           },
           {
             videoId: video.id,
-            title: '基础理论',
+            title: 'Basic Theory',
             duration: 600,
             order: 2,
             isFree: false
           },
           {
             videoId: video.id,
-            title: '动作演示',
+            title: 'Movement Demonstration',
             duration: 900,
             order: 3,
             isFree: false
           },
           {
             videoId: video.id,
-            title: '练习要点',
+            title: 'Practice Points',
             duration: 600,
             order: 4,
             isFree: false

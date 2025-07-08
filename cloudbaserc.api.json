@@ -1,0 +1,42 @@
+{
+  "envId": "pandagongfu-1-8ghmo6gdb4b55bee",
+  "version": "2.0",
+  "framework": {
+    "name": "api",
+    "plugins": {
+      "function": {
+        "use": "@cloudbase/framework-plugin-function",
+        "inputs": {
+          "functionRootPath": "./",
+          "functions": [
+            {
+              "name": "pandagongfu-api",
+              "config": {
+                "timeout": 30,
+                "envVariables": {
+                  "NODE_ENV": "production"
+                },
+                "runtime": "Nodejs18.15",
+                "memorySize": 256
+              },
+              "source": {
+                "entry": "api-server.js"
+              },
+              "triggers": [
+                {
+                  "name": "api-trigger",
+                  "type": "http",
+                  "config": {
+                    "path": "/api/*",
+                    "method": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "region": "ap-shanghai"
+}

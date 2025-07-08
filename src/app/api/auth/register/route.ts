@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 import { PrismaClient } from '@prisma/client'
-import { generateReferralCode } from '@/lib/utils'
 
 const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
   try {
-    const { username, email, password, phone, referralCode } = await request.json()
+    const { name, email, password } = await request.json()
 
-    if (!username || !email || !password) {
+    // 验证输入
+    if (!name || !email || !password) {
       return NextResponse.json(
-        { error: '用户名、邮箱和密码不能为空' },
+        { error: '姓名、邮箱和密码不能为空' },
+        { status: 400 }
+      )
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: '密码长度至少为6位' },
         { status: 400 }
       )
     }
@@ -24,85 +32,57 @@ export async function POST(request: NextRequest) {
     if (existingUser) {
       return NextResponse.json(
         { error: '该邮箱已被注册' },
-        { status: 400 }
+        { status: 409 }
       )
     }
 
-    // 检查用户名是否已存在
-    const existingUsername = await prisma.user.findUnique({
-      where: { username }
-    })
-
-    if (existingUsername) {
-      return NextResponse.json(
-        { error: '该用户名已被使用' },
-        { status: 400 }
-      )
-    }
-
-    // 验证推荐码（如果提供）
-    let referrerId = null
-    if (referralCode) {
-      const referrer = await prisma.user.findUnique({
-        where: { referralCode }
-      })
-      
-      if (!referrer) {
-        return NextResponse.json(
-          { error: '推荐码无效' },
-          { status: 400 }
-        )
-      }
-      
-      referrerId = referrer.id
-    }
+    // 生成用户名（基于邮箱前缀和随机数）
+    const emailPrefix = email.split('@')[0]
+    const randomSuffix = Math.random().toString(36).substring(2, 6)
+    const username = `${emailPrefix}_${randomSuffix}`
 
     // 加密密码
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // 生成用户的推荐码
-    const userReferralCode = generateReferralCode()
+    // 生成推荐码
+    const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase()
 
     // 创建用户
     const user = await prisma.user.create({
       data: {
         username,
+        name,
         email,
         password: hashedPassword,
-        phone: phone || null,
-        referralCode: userReferralCode,
-        referrerId
+        role: 'USER',
+        referralCode
       }
     })
 
-    // 如果有推荐人，创建推荐关系
-    if (referrerId) {
-      await prisma.referral.create({
-        data: {
-          referrerId,
-          referredId: user.id
-        }
-      })
-    }
+    // 生成JWT token
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        email: user.email, 
+        role: user.role 
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
+    )
 
     // 返回用户信息（不包含密码）
-    const userResponse = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      role: user.role,
-      referralCode: user.referralCode
-    }
+    const { password: _, ...userWithoutPassword } = user
 
     return NextResponse.json({
       message: '注册成功',
-      user: userResponse
+      token,
+      user: userWithoutPassword
     }, { status: 201 })
 
   } catch (error) {
-    console.error('Registration error:', error)
+    console.error('Register error:', error)
     return NextResponse.json(
-      { error: '服务器内部错误' },
+      { error: '服务器错误' },
       { status: 500 }
     )
   }

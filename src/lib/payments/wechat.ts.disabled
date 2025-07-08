@@ -1,0 +1,226 @@
+import { Payment } from 'wechatpay-node-v3'
+import fs from 'fs'
+import path from 'path'
+
+// 微信支付配置
+let wechatPay: Payment | null = null
+
+try {
+  if (process.env.WECHAT_APP_ID && process.env.WECHAT_MCH_ID && process.env.WECHAT_CERT_PATH) {
+    const certPath = path.join(process.cwd(), process.env.WECHAT_CERT_PATH)
+    const publicKeyPath = path.join(certPath, 'cert.pem')
+    const privateKeyPath = path.join(certPath, 'key.pem')
+
+    if (fs.existsSync(publicKeyPath) && fs.existsSync(privateKeyPath)) {
+      const wechatPayConfig = {
+        appid: process.env.WECHAT_APP_ID,
+        mchid: process.env.WECHAT_MCH_ID,
+        publicKey: fs.readFileSync(publicKeyPath),
+        privateKey: fs.readFileSync(privateKeyPath),
+      }
+
+      wechatPay = new Payment(wechatPayConfig)
+    }
+  }
+} catch (error) {
+  console.warn('WeChat Pay initialization failed:', error)
+}
+
+export interface CreateWechatOrderParams {
+  orderId: string
+  amount: number
+  description: string
+  notifyUrl?: string
+  attach?: string
+}
+
+export interface WechatPaymentResult {
+  qrCode: string
+  payUrl: string
+  prepayId: string
+}
+
+/**
+ * 创建微信扫码支付订单
+ */
+export async function createWechatQROrder(
+  params: CreateWechatOrderParams
+): Promise<WechatPaymentResult> {
+  if (!wechatPay) {
+    throw new Error('WeChat Pay is not available')
+  }
+
+  try {
+    const { orderId, amount, description, notifyUrl, attach } = params
+
+    const result = await wechatPay.transactions_native({
+      appid: process.env.WECHAT_APP_ID!,
+      mchid: process.env.WECHAT_MCH_ID!,
+      description,
+      out_trade_no: orderId,
+      time_expire: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30分钟后过期
+      attach,
+      notify_url: notifyUrl || `${process.env.NEXT_PUBLIC_BASE_URL}/api/payments/webhook/wechat`,
+      amount: {
+        total: Math.round(amount * 100), // 转换为分
+        currency: 'CNY',
+      },
+    })
+
+    return {
+      qrCode: result.code_url,
+      payUrl: result.code_url,
+      prepayId: result.prepay_id,
+    }
+  } catch (error) {
+    console.error('WeChat QR order creation failed:', error)
+    throw new Error('Failed to create WeChat QR order')
+  }
+}
+
+/**
+ * 创建微信H5支付订单
+ */
+export async function createWechatH5Order(
+  params: CreateWechatOrderParams & { userAgent: string; clientIp: string }
+): Promise<string> {
+  try {
+    const { orderId, amount, description, notifyUrl, attach, userAgent, clientIp } = params
+
+    const result = await wechatPay.transactions_h5({
+      appid: wechatPayConfig.appid,
+      mchid: wechatPayConfig.mchid,
+      description,
+      out_trade_no: orderId,
+      time_expire: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      attach,
+      notify_url: notifyUrl || `${process.env.NEXT_PUBLIC_BASE_URL}/api/payments/webhook/wechat`,
+      amount: {
+        total: Math.round(amount * 100),
+        currency: 'CNY',
+      },
+      scene_info: {
+        payer_client_ip: clientIp,
+        h5_info: {
+          type: 'Wap',
+          app_name: 'Pandagongfu-慧',
+          app_url: process.env.NEXT_PUBLIC_BASE_URL!,
+        },
+      },
+    })
+
+    return result.h5_url
+  } catch (error) {
+    console.error('WeChat H5 order creation failed:', error)
+    throw new Error('Failed to create WeChat H5 order')
+  }
+}
+
+/**
+ * 验证微信支付回调签名
+ */
+export function verifyWechatNotification(
+  timestamp: string,
+  nonce: string,
+  body: string,
+  signature: string
+): boolean {
+  try {
+    return wechatPay.verifySign({
+      timestamp,
+      nonce,
+      body,
+      signature,
+    })
+  } catch (error) {
+    console.error('WeChat notification verification failed:', error)
+    return false
+  }
+}
+
+/**
+ * 解密微信支付回调数据
+ */
+export function decryptWechatNotification(
+  ciphertext: string,
+  associatedData: string,
+  nonce: string
+): any {
+  try {
+    return wechatPay.decipher_gcm(
+      ciphertext,
+      associatedData,
+      nonce,
+      process.env.WECHAT_API_KEY!
+    )
+  } catch (error) {
+    console.error('WeChat notification decryption failed:', error)
+    throw new Error('Failed to decrypt WeChat notification')
+  }
+}
+
+/**
+ * 查询微信支付订单状态
+ */
+export async function queryWechatOrder(orderId: string) {
+  try {
+    const result = await wechatPay.query({
+      out_trade_no: orderId,
+    })
+
+    return {
+      orderId: result.out_trade_no,
+      transactionId: result.transaction_id,
+      tradeState: result.trade_state,
+      tradeStateDesc: result.trade_state_desc,
+      successTime: result.success_time,
+      amount: {
+        total: result.amount.total / 100, // 转换为元
+        payerTotal: result.amount.payer_total / 100,
+        currency: result.amount.currency,
+      },
+    }
+  } catch (error) {
+    console.error('WeChat order query failed:', error)
+    throw new Error('Failed to query WeChat order')
+  }
+}
+
+/**
+ * 创建微信支付退款
+ */
+export async function createWechatRefund(
+  orderId: string,
+  refundAmount: number,
+  totalAmount: number,
+  reason?: string
+) {
+  try {
+    const result = await wechatPay.refund({
+      out_trade_no: orderId,
+      out_refund_no: `${orderId}_refund_${Date.now()}`,
+      reason: reason || '用户申请退款',
+      amount: {
+        refund: Math.round(refundAmount * 100),
+        total: Math.round(totalAmount * 100),
+        currency: 'CNY',
+      },
+      notify_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/payments/webhook/wechat/refund`,
+    })
+
+    return {
+      refundId: result.refund_id,
+      outRefundNo: result.out_refund_no,
+      createTime: result.create_time,
+      amount: {
+        refund: result.amount.refund / 100,
+        total: result.amount.total / 100,
+      },
+    }
+  } catch (error) {
+    console.error('WeChat refund creation failed:', error)
+    throw new Error('Failed to create WeChat refund')
+  }
+}
+
+export { wechatPay }

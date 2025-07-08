@@ -1,290 +1,273 @@
-"use client"
+'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Filter, Grid, List, ChevronDown } from 'lucide-react'
+import Link from 'next/link'
+import { Play, Star, Clock, Users, Search, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
-import { Header } from '@/components/layout/header'
-import { Footer } from '@/components/layout/footer'
-import { VideoCard } from '@/components/video/video-card'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
-// 模拟数据
-const mockVideos = [
+// 模拟课程数据
+const mockCourses = [
   {
-    id: '1',
-    title: '零基础学习太极拳入门课程',
-    description: '从基础动作开始，循序渐进地学习太极拳的精髓，适合所有年龄段的学习者。',
-    thumbnail: '/api/placeholder/400/225',
-    price: 99,
-    originalPrice: 199,
-    duration: 3600,
-    rating: 4.8,
-    students: 1234,
-    instructor: '李师傅',
-    category: '太极拳'
-  },
-  {
-    id: '2',
-    title: '高级太极拳技法精讲',
-    description: '深入讲解太极拳的高级技法和内功修炼，提升你的太极拳水平。',
-    thumbnail: '/api/placeholder/400/225',
+    id: 1,
+    title: '太极拳入门基础',
+    description: '从基础站桩开始，学习太极拳的核心理念和基本动作，适合零基础学员',
     price: 199,
     originalPrice: 299,
-    duration: 5400,
-    rating: 4.9,
-    students: 856,
-    instructor: '王师傅',
-    category: '太极拳'
-  },
-  {
-    id: '3',
-    title: '养生气功基础教程',
-    description: '学习传统养生气功，改善身体健康，提升生活质量。',
-    thumbnail: '/api/placeholder/400/225',
-    price: 79,
-    originalPrice: 159,
-    duration: 2700,
-    rating: 4.7,
-    students: 2156,
-    instructor: '张师傅',
-    category: '气功'
-  },
-  {
-    id: '4',
-    title: '八段锦完整教学',
-    description: '传统八段锦功法完整教学，强身健体，延年益寿。',
-    thumbnail: '/api/placeholder/400/225',
-    price: 89,
-    originalPrice: 149,
-    duration: 1800,
-    rating: 4.6,
-    students: 987,
-    instructor: '刘师傅',
-    category: '八段锦'
-  },
-  {
-    id: '5',
-    title: '五禽戏养生功法',
-    description: '模仿虎、鹿、熊、猿、鸟五种动物的动作，达到强身健体的效果。',
-    thumbnail: '/api/placeholder/400/225',
-    price: 69,
-    originalPrice: 129,
-    duration: 2100,
-    rating: 4.5,
-    students: 654,
-    instructor: '陈师傅',
-    category: '五禽戏'
-  },
-  {
-    id: '6',
-    title: '易筋经内功修炼',
-    description: '古传易筋经内功修炼方法，增强体质，提升内力。',
-    thumbnail: '/api/placeholder/400/225',
-    price: 159,
-    originalPrice: 259,
-    duration: 4200,
+    instructor: '张三丰',
+    duration: '2小时30分',
+    students: 1234,
     rating: 4.8,
-    students: 432,
-    instructor: '赵师傅',
-    category: '易筋经'
+    level: '初级',
+    category: '太极拳',
+    tags: ['基础', '养生', '内功'],
+    thumbnail: '/api/placeholder/400/225'
+  },
+  {
+    id: 2,
+    title: '八段锦养生功法',
+    description: '古代养生功法，强身健体，调理气血，适合现代人练习',
+    price: 149,
+    originalPrice: 199,
+    instructor: '李时珍',
+    duration: '1小时45分',
+    students: 856,
+    rating: 4.9,
+    level: '初级',
+    category: '养生功',
+    tags: ['养生', '健身', '气功'],
+    thumbnail: '/api/placeholder/400/225'
+  },
+  {
+    id: 3,
+    title: '内功心法秘传',
+    description: '深入学习内功修炼方法，提升内在能量和身心健康',
+    price: 299,
+    originalPrice: 399,
+    instructor: '王重阳',
+    duration: '3小时15分',
+    students: 567,
+    rating: 4.7,
+    level: '中级',
+    category: '内功',
+    tags: ['内功', '心法', '进阶'],
+    thumbnail: '/api/placeholder/400/225'
+  },
+  {
+    id: 4,
+    title: '五禽戏完整教学',
+    description: '华佗五禽戏完整套路，模仿虎、鹿、熊、猿、鸟五种动物的动作',
+    price: 179,
+    originalPrice: 249,
+    instructor: '华佗',
+    duration: '2小时',
+    students: 723,
+    rating: 4.6,
+    level: '初级',
+    category: '养生功',
+    tags: ['五禽戏', '养生', '传统'],
+    thumbnail: '/api/placeholder/400/225'
+  },
+  {
+    id: 5,
+    title: '武当剑法基础',
+    description: '武当派经典剑法，注重内外兼修，剑法飘逸灵动',
+    price: 259,
+    originalPrice: 329,
+    instructor: '张无忌',
+    duration: '2小时45分',
+    students: 445,
+    rating: 4.8,
+    level: '中级',
+    category: '剑法',
+    tags: ['剑法', '武当', '技击'],
+    thumbnail: '/api/placeholder/400/225'
+  },
+  {
+    id: 6,
+    title: '少林易筋经',
+    description: '少林寺传统内功心法，强筋健骨，增强体质',
+    price: 329,
+    originalPrice: 429,
+    instructor: '达摩祖师',
+    duration: '4小时',
+    students: 334,
+    rating: 4.9,
+    level: '高级',
+    category: '内功',
+    tags: ['易筋经', '少林', '内功'],
+    thumbnail: '/api/placeholder/400/225'
   }
 ]
 
-const categories = ['全部', '太极拳', '气功', '八段锦', '五禽戏', '易筋经', '六字诀']
-const sortOptions = [
-  { value: 'newest', label: '最新发布' },
-  { value: 'popular', label: '最受欢迎' },
-  { value: 'price-low', label: '价格从低到高' },
-  { value: 'price-high', label: '价格从高到低' },
-  { value: 'rating', label: '评分最高' }
-]
-
 export default function CoursesPage() {
-  const [videos, setVideos] = useState(mockVideos)
-  const [filteredVideos, setFilteredVideos] = useState(mockVideos)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [courses, setCourses] = useState(mockCourses)
+  const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('全部')
-  const [sortBy, setSortBy] = useState('newest')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [showFilters, setShowFilters] = useState(false)
+  const [selectedLevel, setSelectedLevel] = useState('全部')
 
-  // 搜索和筛选逻辑
-  useEffect(() => {
-    let filtered = videos
+  const categories = ['全部', '太极拳', '养生功', '内功', '剑法']
+  const levels = ['全部', '初级', '中级', '高级']
 
-    // 按分类筛选
-    if (selectedCategory !== '全部') {
-      filtered = filtered.filter(video => video.category === selectedCategory)
-    }
-
-    // 按搜索关键词筛选
-    if (searchQuery) {
-      filtered = filtered.filter(video =>
-        video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        video.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        video.instructor.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    }
-
-    // 排序
-    switch (sortBy) {
-      case 'popular':
-        filtered.sort((a, b) => b.students - a.students)
-        break
-      case 'price-low':
-        filtered.sort((a, b) => a.price - b.price)
-        break
-      case 'price-high':
-        filtered.sort((a, b) => b.price - a.price)
-        break
-      case 'rating':
-        filtered.sort((a, b) => b.rating - a.rating)
-        break
-      default:
-        // 保持原始顺序（最新发布）
-        break
-    }
-
-    setFilteredVideos(filtered)
-  }, [videos, searchQuery, selectedCategory, sortBy])
+  // 过滤课程
+  const filteredCourses = courses.filter(course => {
+    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         course.instructor.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = selectedCategory === '全部' || course.category === selectedCategory
+    const matchesLevel = selectedLevel === '全部' || course.level === selectedLevel
+    
+    return matchesSearch && matchesCategory && matchesLevel
+  })
 
   return (
-    <div className="min-h-screen">
-      <Header />
-      
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
+        <div className="container flex h-16 items-center justify-between px-6">
+          <Link href="/" className="flex items-center space-x-2">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
+              <span className="text-white font-bold text-lg">慧</span>
+            </div>
+            <span className="font-bold text-xl bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
+              Pandagongfu-慧
+            </span>
+          </Link>
+
+          <nav className="hidden md:flex items-center space-x-6">
+            <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
+              首页
+            </Link>
+            <Link href="/courses" className="text-sm font-medium text-primary">
+              课程
+            </Link>
+            <Link href="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
+              学习中心
+            </Link>
+          </nav>
+
+          <div className="flex items-center space-x-4">
+            <Link href="/login">
+              <Button variant="ghost" size="sm">登录</Button>
+            </Link>
+            <Link href="/register">
+              <Button size="sm">注册</Button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* 页面内容 */}
       <div className="container py-8">
         {/* 页面标题 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">所有课程</h1>
-          <p className="text-muted-foreground">
-            发现适合您的高质量视频课程，开始您的学习之旅
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold mb-4">功法课程</h1>
+          <p className="text-lg text-muted-foreground">
+            精选传统武学课程，传承千年智慧
           </p>
         </div>
 
-        {/* 搜索和筛选栏 */}
+        {/* 搜索和筛选 */}
         <div className="mb-8 space-y-4">
-          {/* 搜索框 */}
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                type="search"
-                placeholder="搜索课程、讲师或关键词..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowFilters(!showFilters)}
-                className="md:hidden"
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                筛选
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-              >
-                {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-
-          {/* 筛选选项 */}
-          <div className={`space-y-4 ${showFilters ? 'block' : 'hidden md:block'}`}>
-            <div className="flex flex-wrap gap-4">
-              {/* 分类筛选 */}
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <Button
-                    key={category}
-                    variant={selectedCategory === category ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedCategory(category)}
-                  >
-                    {category}
-                  </Button>
-                ))}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="搜索课程、导师或关键词..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
             </div>
-
-            {/* 排序选项 */}
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium">排序：</span>
+            <div className="flex gap-2">
               <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="text-sm border rounded px-3 py-1"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-3 py-2 border rounded-md bg-background"
               >
-                {sortOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
+                {categories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+              <select
+                value={selectedLevel}
+                onChange={(e) => setSelectedLevel(e.target.value)}
+                className="px-3 py-2 border rounded-md bg-background"
+              >
+                {levels.map(level => (
+                  <option key={level} value={level}>{level}</option>
                 ))}
               </select>
             </div>
           </div>
         </div>
 
-        {/* 结果统计 */}
-        <div className="mb-6 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            找到 {filteredVideos.length} 门课程
-          </p>
+        {/* 课程网格 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCourses.map(course => (
+            <Card key={course.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <div className="aspect-video bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <div className="text-white text-center">
+                  <Play className="h-12 w-12 mx-auto mb-2" />
+                  <p className="text-sm">{course.category}</p>
+                </div>
+              </div>
+              
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <Badge variant="secondary">{course.level}</Badge>
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
+                    {course.rating}
+                  </div>
+                </div>
+                
+                <h3 className="text-xl font-semibold mb-2">{course.title}</h3>
+                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                  {course.description}
+                </p>
+                
+                <div className="flex items-center text-sm text-muted-foreground mb-4">
+                  <Users className="h-4 w-4 mr-1" />
+                  <span className="mr-4">{course.students}人学习</span>
+                  <Clock className="h-4 w-4 mr-1" />
+                  <span>{course.duration}</span>
+                </div>
+                
+                <div className="flex flex-wrap gap-1 mb-4">
+                  {course.tags.map(tag => (
+                    <Badge key={tag} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-2xl font-bold text-primary">¥{course.price}</span>
+                    {course.originalPrice > course.price && (
+                      <span className="text-sm text-muted-foreground line-through ml-2">
+                        ¥{course.originalPrice}
+                      </span>
+                    )}
+                  </div>
+                  <Button>立即学习</Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        {/* 课程列表 */}
-        {filteredVideos.length > 0 ? (
-          <div className={
-            viewMode === 'grid' 
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-              : "space-y-4"
-          }>
-            {filteredVideos.map((video) => (
-              <VideoCard key={video.id} video={video} />
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <div className="text-muted-foreground mb-4">
-                <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">未找到相关课程</h3>
-                <p>请尝试调整搜索条件或筛选选项</p>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchQuery('')
-                  setSelectedCategory('全部')
-                  setSortBy('newest')
-                }}
-              >
-                清除筛选条件
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 加载更多按钮 */}
-        {filteredVideos.length > 0 && (
-          <div className="mt-12 text-center">
-            <Button variant="outline" size="lg">
-              加载更多课程
-            </Button>
+        {filteredCourses.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">没有找到符合条件的课程</p>
           </div>
         )}
       </div>
-
-      <Footer />
     </div>
   )
 }

@@ -1,0 +1,14 @@
+{
+  "envId": "pandagongfu-1-8ghmo6gdb4b55bee",
+  "framework": {
+    "plugins": {
+      "website": {
+        "use": "@cloudbase/framework-plugin-website",
+        "inputs": {
+          "outputPath": ".next",
+          "cloudPath": "/"
+        }
+      }
+    }
+  }
+}
